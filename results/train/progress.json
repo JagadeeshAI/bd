@@ -1,4 +1,4 @@
 {
-    "best_val_acc": 52.35,
-    "last_epoch": 39
+    "best_val_acc": 59.95,
+    "last_epoch": 50
 }

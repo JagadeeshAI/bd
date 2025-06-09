@@ -6,37 +6,33 @@ from tqdm import tqdm
 from pathlib import Path
 from torch import nn
 from torch.optim import AdamW
-from transformers import ViTConfig, ViTForImageClassification
 
 from src.config import Config
 from src.codes.data import get_train_loader, get_val_loader
+from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
 
-# Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def get_model():
-    config = ViTConfig(
-        hidden_size=768,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        intermediate_size=3072,
+    model = ViTClassifier(
+        num_classes=50,
         image_size=Config.IMAGE_SIZE,
         patch_size=16,
-        num_channels=3,
-        qkv_bias=True,
-        hidden_act="gelu",
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        num_labels=50
+        ac_patch_size=16,
+        pad=0,
+        dim=768,
+        depth=12,
+        heads=12,
+        mlp_dim=3072,
+        pool="cls",
+        channels=3,
+        dim_head=64,
+        dropout=0.1,
+        emb_dropout=0.1,
+        use_lora=False
     )
-    model = ViTForImageClassification(config)
-
-    with torch.no_grad():
-        model.classifier.weight[40:].requires_grad = False
-        model.classifier.bias[40:].requires_grad = False
-
     return model
 
 
@@ -49,8 +45,7 @@ def evaluate(model, loader, device):
     with torch.no_grad():
         for images, labels in tqdm(loader, desc="Validating", leave=False):
             images, labels = images.to(device), labels.to(device)
-            outputs = model(images).logits
-            outputs[:, 40:] = -1e9  # Mask future classes
+            outputs = model(images)
             loss = criterion(outputs, labels)
 
             preds = outputs.argmax(dim=1)
@@ -85,7 +80,7 @@ def train():
     outdir = Path(Config.TRAIN.OUT_DIR)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("🧠 Starting ViT training...")
+    logger.info("🧠 Starting ViTClassifier training...")
     logger.info(f"📁 Output directory: {outdir}")
     logger.info(f"🖥️ Device: {device}")
 
@@ -96,7 +91,7 @@ def train():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
+        model.parameters(),
         lr=Config.TRAIN.LR,
         weight_decay=Config.TRAIN.WEIGHT_DECAY
     )
@@ -150,8 +145,7 @@ def train():
             images, labels = images.to(device), labels.to(device)
 
             optimizer.zero_grad()
-            outputs = model(images).logits
-            outputs[:, 40:] = -1e9
+            outputs = model(images)  # No .logits needed
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()

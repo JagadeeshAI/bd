@@ -1,96 +1,93 @@
 import os
 import json
 import torch
-from tqdm import tqdm
-from pathlib import Path
+import logging
 from collections import defaultdict
-
-from torch import nn
-from transformers import ViTConfig, ViTForImageClassification
+from sklearn.metrics import accuracy_score
+from tqdm import tqdm
 
 from src.config import Config
-from src.codes.data import get_full_val_loader
+from src.codes.data import get_val_loader
+from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
+from src.codes.train import get_model  
 
-def load_model():
-    config = ViTConfig(
-        hidden_size=768,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        intermediate_size=3072,
-        image_size=Config.IMAGE_SIZE,
-        patch_size=16,
-        num_channels=3,
-        qkv_bias=True,
-        hidden_act="gelu",
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        num_labels=50
-    )
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-    model = ViTForImageClassification(config)
-    model_path = "results/train/incremental_epoch1.pth"
 
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"❌ Model checkpoint not found at: {model_path}")
-
-    checkpoint = torch.load(model_path, map_location=Config.DEVICE)
-
-    state_dict = checkpoint["model_state"] if isinstance(checkpoint, dict) and "model_state" in checkpoint else checkpoint
-    model.load_state_dict(state_dict)
-    model.to(Config.DEVICE)
-    model.eval()
-    print(f"✅ Model loaded from {model_path}")
+def load_best_model(model, model_path, device):
+    if os.path.exists(model_path):
+        logger.info(f"🔍 Loading best model from {model_path}")
+        checkpoint = torch.load(model_path, map_location=device)
+        if "model_state" in checkpoint:
+            model.load_state_dict(checkpoint["model_state"])
+            logger.info("✅ Model weights loaded.")
+        else:
+            model.load_state_dict(checkpoint)
+            logger.warning("⚠️ Loaded model without full checkpoint info.")
+    else:
+        raise FileNotFoundError(f"No saved model found at {model_path}")
     return model
 
-def evaluate_per_class(model, loader, device, num_classes=50):
+
+def evaluate_with_classwise(model, loader, device, num_classes):
+    model.eval()
+    all_preds = []
+    all_labels = []
     class_correct = defaultdict(int)
     class_total = defaultdict(int)
-    total_correct = 0
-    total_samples = 0
 
     with torch.no_grad():
-        for images, labels in tqdm(loader, desc="Running Inference"):
+        for images, labels in tqdm(loader, desc="Evaluating", leave=False):
             images, labels = images.to(device), labels.to(device)
-            outputs = model(images).logits
+            outputs = model(images)
             preds = outputs.argmax(dim=1)
 
-            total_correct += (preds == labels).sum().item()
-            total_samples += labels.size(0)
+            all_preds.extend(preds.cpu().tolist())
+            all_labels.extend(labels.cpu().tolist())
 
-            for label, pred in zip(labels.cpu(), preds.cpu()):
+            for label, pred in zip(labels, preds):
                 class_total[int(label)] += 1
-                if pred == label:
+                if label == pred:
                     class_correct[int(label)] += 1
 
-    class_acc = {}
-    for cls in range(num_classes):
-        correct = class_correct[cls]
-        total = class_total[cls]
-        acc = 100.0 * correct / total if total > 0 else 0.0
-        class_acc[str(cls)] = round(acc, 2)
+    overall_acc = accuracy_score(all_labels, all_preds) * 100
+    class_acc = {
+        str(cls): round(100 * class_correct[cls] / class_total[cls], 2) if class_total[cls] > 0 else 0.0
+        for cls in range(num_classes)
+    }
 
-    overall_acc = 100.0 * total_correct / total_samples if total_samples > 0 else 0.0
-    return class_acc, round(overall_acc, 2)
+    return overall_acc, class_acc
 
-def save_results(results, out_path="results.json"):
-    with open(out_path, "w") as f:
-        json.dump(results, f, indent=4)
-    print(f"✅ Per-class accuracy saved to {out_path}")
+
+def save_accuracy_report(overall_acc, class_acc, out_dir):
+    acc_report = {
+        "overall_accuracy": round(overall_acc, 2),
+        "classwise_accuracy": class_acc
+    }
+    acc_path = os.path.join(out_dir, "acc.json")
+    with open(acc_path, "w") as f:
+        json.dump(acc_report, f, indent=4)
+    logger.info(f"📄 Accuracy report saved to {acc_path}")
+
 
 def main():
     device = Config.DEVICE
-    print(f"✅ Device used: {device}")
+    val_loader = get_val_loader()
+    num_classes = 40
 
-    val_loader = get_full_val_loader()
-    model = load_model()
+    model = get_model().to(device)
+    model = load_best_model(model, Config.TRAIN.model_path(), device)
 
-    print("🚀 Evaluating model on validation set...")
-    class_acc, overall_acc = evaluate_per_class(model, val_loader, device, num_classes=50)
+    logger.info("📊 Evaluating best model...")
+    overall_acc, class_acc = evaluate_with_classwise(model, val_loader, device, num_classes)
 
-    output_path = Path(Config.TRAIN.OUT_DIR) / "results.json"
-    save_results(class_acc, output_path)
+    logger.info(f"🏁 Overall Accuracy: {overall_acc:.2f}%")
+    for cls, acc in class_acc.items():
+        logger.info(f"Class {cls}: {acc:.2f}%")
 
-    print(f"\n📊 Overall Accuracy (classes 0–49): {overall_acc:.2f}%\n")
+    save_accuracy_report(overall_acc, class_acc, Config.TRAIN.OUT_DIR)
+
 
 if __name__ == "__main__":
     main()
