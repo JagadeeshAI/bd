@@ -120,16 +120,12 @@ def compute_hmean(acc_retain, acc_forget):
     denom = retain_ratio + forget_complement
     return 2 * retain_ratio * forget_complement / denom * 100.0 if denom != 0 else 0.0
 
-
-
-
-
 def main():
     device = Config.DEVICE
     logger.info(f"✅ Device: {device}")
 
     model = get_model().to(device)
-    model = load_base_model_weights(model, "results/forget/best_model2.pth", device)
+    model = load_base_model_weights(model, "results/forget/53accr0accf.pth", device)
 
     if USE_LORA:
         enable_lora_training(model)
@@ -145,8 +141,6 @@ def main():
     hmean = compute_hmean(acc_r, acc_f)
 
     logger.info(f" — Retain Acc: {acc_r:.2f}% | Forget Acc: {acc_f:.2f}% | H-mean: {hmean:.2f}%")
-
-        
 
     logger.info("✅ Forgetting phase complete.")
 
