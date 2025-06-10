@@ -22,7 +22,7 @@ USE_LORA = True
 
 def get_model():
     return ViTClassifier(
-        num_classes=50,  # Always 50 outputs
+        num_classes=50,
         image_size=Config.IMAGE_SIZE,
         patch_size=16,
         ac_patch_size=16,
@@ -72,10 +72,10 @@ def enable_lora_training(model):
                         lora_params += p.numel()
 
     if lora_params == 0:
-        print("⚠️ No LoRA parameters found!")
+        logger.warning("⚠️ No LoRA parameters found!")
     else:
         percent = 100 * lora_params / total_params
-        print(f"🔓 Training LoRA only: {lora_params:,} / {total_params:,} ({percent:.2f}%)")
+        logger.info(f"🔓 Training LoRA only: {lora_params:,} / {total_params:,} ({percent:.2f}%)")
 
 
 def get_dataloaders():
@@ -166,8 +166,8 @@ def main():
 
     best_hmean = -1
     patience = 0
-    best_path = os.path.join(Config.FORGET.OUT_DIR, "best_model.pth")
-    resume_path = os.path.join(Config.FORGET.OUT_DIR, "forget_resume.json")
+    best_path = Config.FORGET.best_model_path()
+    resume_path = Config.FORGET.resume_path()
     os.makedirs(Config.FORGET.OUT_DIR, exist_ok=True)
 
     for epoch in range(1, Config.FORGET.EPOCHS + 1):
@@ -175,6 +175,7 @@ def main():
         loop = tqdm(train_r, desc=f"[Epoch {epoch}] Training", unit="batch")
 
         for xr, yr in loop:
+            
             xf, yf = next(forget_cycle)
             xr, yr = xr.to(device), yr.to(device)
             xf, yf = xf.to(device), yf.to(device)
@@ -200,14 +201,26 @@ def main():
         if hmean > best_hmean:
             best_hmean = hmean
             patience = 0
-            torch.save(model.state_dict(), best_path)
-            logger.info(f"💾 New best model saved at {best_path}")
+
+            torch.save({
+                'epoch': epoch,
+                'model_state': model.state_dict(),
+                'optimizer_state': optimizer.state_dict(),
+                'scheduler_state': scheduler.state_dict(),
+                'hmean': hmean
+            }, best_path)
+
+            logger.info(f"💾 New best model checkpoint saved at {best_path}")
         else:
             patience += 1
             logger.info(f"⏳ No improvement ({patience}/10)")
 
         with open(resume_path, "w") as f:
-            json.dump({"epoch": epoch, "hmean": hmean, "model_path": best_path}, f, indent=4)
+            json.dump({
+                "epoch": epoch,
+                "hmean": hmean,
+                "model_path": best_path
+            }, f, indent=4)
 
         if patience >= 10:
             logger.warning("🛑 Early stopping triggered.")

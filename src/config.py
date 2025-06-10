@@ -27,7 +27,7 @@ class Config:
         WEIGHT_DECAY = 1e-4
         BND = 10
         BETA = 0.2
-        COMP_RESUME = False
+        COMP_RESUME = True
         DATA_RATIO = 0.01  # Currently unused
 
         # ✅ Added: Required paths for forgetting/retention loaders

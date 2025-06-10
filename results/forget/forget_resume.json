@@ -1,5 +1,5 @@
 {
-    "epoch": 4,
-    "hmean": 72.55734919286321,
+    "epoch": 1,
+    "hmean": 69.85566652192792,
     "model_path": "./results/forget/best_model.pth"
 }

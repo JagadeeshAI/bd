@@ -2,13 +2,18 @@ import os
 import json
 import torch
 import logging
+import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score
+from itertools import cycle
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from src.config import Config
 from src.codes.data import get_dynamic_loader
 from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
 
+# Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -31,99 +36,119 @@ def get_model():
         dim_head=64,
         dropout=0.1,
         emb_dropout=0.1,
-        use_lora=USE_LORA
+        use_lora=USE_LORA,
+        lora_rank=8 if USE_LORA else None
     )
 
 
-def load_model(model, path, device):
+def load_base_model_weights(model, path, device):
     if not os.path.exists(path):
-        raise FileNotFoundError(f"❌ Model not found at: {path}")
-    logger.info(f"🔍 Loading model from: {path}")
+        raise FileNotFoundError(f"Model not found at {path}")
+    logger.info(f"🔍 Loading base model from {path}")
     checkpoint = torch.load(path, map_location=device)
-    model.load_state_dict(checkpoint.get("model_state", checkpoint), strict=False)
-    logger.info("✅ Model loaded successfully.")
+    state_dict = checkpoint.get("model_state", checkpoint)
+    model.load_state_dict(state_dict, strict=False)
+    logger.info("✅ Weights loaded with strict=False")
     return model
 
 
-def evaluate(model, loader, device):
-    model.eval()
-    all_preds, all_labels = [], []
+def enable_lora_training(model):
+    total_params = sum(p.numel() for p in model.parameters())
+    lora_params = 0
 
-    with torch.no_grad():
-        for x, y in tqdm(loader, desc="Evaluating", leave=False):
-            x, y = x.to(device), y.to(device)
-            logits = model(x)
-            preds = logits.argmax(dim=1)
+    for p in model.parameters():
+        p.requires_grad = False
 
-            all_preds.extend(preds.cpu().tolist())
-            all_labels.extend(y.cpu().tolist())
+    for name, module in model.named_modules():
+        for attr in ['lora_A', 'lora_B', 'lora_right', 'lora_down', 'lora_up']:
+            if hasattr(module, attr):
+                param_or_tensor = getattr(module, attr)
+                if isinstance(param_or_tensor, nn.Parameter):
+                    param_or_tensor.requires_grad = True
+                    lora_params += param_or_tensor.numel()
+                elif isinstance(param_or_tensor, nn.Module):
+                    for p in param_or_tensor.parameters():
+                        p.requires_grad = True
+                        lora_params += p.numel()
 
-    acc = accuracy_score(all_labels, all_preds) * 100
-    return acc
+    if lora_params == 0:
+        logger.warning("⚠️ No LoRA parameters found!")
+    else:
+        percent = 100 * lora_params / total_params
+        logger.info(f"🔓 Training LoRA only: {lora_params:,} / {total_params:,} ({percent:.2f}%)")
 
 
-def harmonic_mean(acc_retain, acc_forget):
-    forget_complement = 1 - acc_forget / 100.0
-    retain_ratio = acc_retain / 100.0
-    if forget_complement + retain_ratio == 0:
-        return 0.0
-    return 2 * forget_complement * retain_ratio / (forget_complement + retain_ratio) * 100.0
+def get_dataloaders():
+    train_path = Config.FORGET.TRAIN_DATA_PATH
+    val_path = Config.FORGET.VAL_DATA_PATH
 
-
-def main():
-    device = Config.DEVICE
-    logger.info(f"🖥️ Device: {device}")
-
-    model = get_model().to(device)
-    model_path = Config.FORGET.best_model_path()
-    model = load_model(model, model_path, device)
-
-    # Define class ranges
     forget_classes = list(range(0, 10))
     retain_classes = list(range(10, 40))
 
-    # Load validation loaders
+    
     val_forget_loader = get_dynamic_loader(
-        data_path=Config.FORGET.VAL_DATA_PATH,
+        data_path=val_path,
         class_range=forget_classes,
         mode='val',
         use_original_labels=True
     )
-
     val_retain_loader = get_dynamic_loader(
-        data_path=Config.FORGET.VAL_DATA_PATH,
+        data_path=val_path,
         class_range=retain_classes,
         mode='val',
         use_original_labels=True
     )
 
-    if val_forget_loader is None or val_retain_loader is None:
-        logger.error("❌ Failed to load one or more validation loaders.")
-        return
+    return  val_forget_loader, val_retain_loader
 
-    acc_retain = evaluate(model, val_retain_loader, device)
-    acc_forget = evaluate(model, val_forget_loader, device)
-    hmean = harmonic_mean(acc_retain, acc_forget)
 
-    logger.info(f"✅ Retain Accuracy (10–39): {acc_retain:.2f}%")
-    logger.info(f"✅ Forget Accuracy (0–9): {acc_forget:.2f}%")
-    logger.info(f"🎯 Harmonic Mean: {hmean:.2f}%")
+def compute_accuracy(model, loader, device):
+    model.eval()
+    correct = total = 0
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            preds = model(x).argmax(dim=1)
+            correct += (preds == y).sum().item()
+            total += y.size(0)
+    return 100.0 * correct / total if total > 0 else 0.0
 
-    # Save report
-    report = {
-        "retain_accuracy": round(acc_retain, 2),
-        "forget_accuracy": round(acc_forget, 2),
-        "harmonic_mean": round(hmean, 2),
-        "retain_classes": retain_classes,
-        "forget_classes": forget_classes
-    }
+
+def compute_hmean(acc_retain, acc_forget):
+    retain_ratio = acc_retain / 100.0
+    forget_complement = 1 - acc_forget / 100.0
+    denom = retain_ratio + forget_complement
+    return 2 * retain_ratio * forget_complement / denom * 100.0 if denom != 0 else 0.0
+
+
+
+
+
+def main():
+    device = Config.DEVICE
+    logger.info(f"✅ Device: {device}")
+
+    model = get_model().to(device)
+    model = load_base_model_weights(model, "results/forget/best_model2.pth", device)
+
+    if USE_LORA:
+        enable_lora_training(model)
+
+    logger.info("📦 Loading data...")
+    val_f, val_r = get_dataloaders()
 
     os.makedirs(Config.FORGET.OUT_DIR, exist_ok=True)
-    report_path = os.path.join(Config.FORGET.OUT_DIR, "acc_forget.json")
-    with open(report_path, "w") as f:
-        json.dump(report, f, indent=4)
 
-    logger.info(f"📄 Accuracy report saved to: {report_path}")
+
+    acc_r = compute_accuracy(model, val_r, device)
+    acc_f = compute_accuracy(model, val_f, device)
+    hmean = compute_hmean(acc_r, acc_f)
+
+    logger.info(f" — Retain Acc: {acc_r:.2f}% | Forget Acc: {acc_f:.2f}% | H-mean: {hmean:.2f}%")
+
+        
+
+    logger.info("✅ Forgetting phase complete.")
 
 
 if __name__ == "__main__":
