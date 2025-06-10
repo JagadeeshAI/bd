@@ -26,9 +26,22 @@ class Config:
         LR = 2e-4
         WEIGHT_DECAY = 1e-4
         BND = 10
-        BETA = 0.2 
-        COPM_RESUME = True  
-        DATA_RATIO = 0.01  
+        BETA = 0.2
+        COMP_RESUME = False
+        DATA_RATIO = 0.01  # Currently unused
+
+        # ✅ Added: Required paths for forgetting/retention loaders
+        TRAIN_DATA_PATH = "/home/jag/codes/VIM_lora/data/train"
+        VAL_DATA_PATH = "/home/jag/codes/VIM_lora/data/val"
+
+        @staticmethod
+        def best_model_path():
+            return os.path.join(Config.FORGET.OUT_DIR, "best_model.pth")
+
+        @staticmethod
+        def resume_path():
+            return os.path.join(Config.FORGET.OUT_DIR, "forget_resume.json")
+
 
     class TRAIN:
         OUT_DIR = "./results/train"

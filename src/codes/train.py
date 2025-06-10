@@ -8,7 +8,7 @@ from torch import nn
 from torch.optim import AdamW
 
 from src.config import Config
-from src.codes.data import get_train_loader, get_val_loader
+from src.codes.data import get_dynamic_loader
 from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -84,8 +84,27 @@ def train():
     logger.info(f"📁 Output directory: {outdir}")
     logger.info(f"🖥️ Device: {device}")
 
-    train_loader = get_train_loader()
-    val_loader = get_val_loader()
+    # Define the class range
+    class_range = range(0, 40)  # 0 to 39 inclusive
+
+    # Paths to the dataset
+    train_data_path = '/home/jag/codes/VIM_lora/data/train'  # Replace with your actual train dataset path
+    val_data_path = '/home/jag/codes/VIM_lora/data/val'      # Replace with your actual val dataset path
+
+    # Call the loader for training mode
+    train_loader = get_dynamic_loader(
+        data_path=train_data_path,
+        class_range=class_range,
+        mode='train'
+    )
+
+    # Call the loader for validation mode
+    val_loader = get_dynamic_loader(
+        data_path=val_data_path,
+        class_range=class_range,
+        mode='val'
+    )
+
 
     model = get_model().to(device)
 
