@@ -17,9 +17,6 @@ from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-USE_LORA = True
-
-
 def get_model():
     return ViTClassifier(
         num_classes=50,
@@ -36,8 +33,8 @@ def get_model():
         dim_head=64,
         dropout=0.1,
         emb_dropout=0.1,
-        use_lora=USE_LORA,
-        lora_rank=8 if USE_LORA else None
+        use_lora=True,
+        lora_rank=8 
     )
 
 
