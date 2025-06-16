@@ -1,4 +1,14 @@
 import os
+import warnings
+import logging
+import torch
+
+# Suppress warnings and logs
+warnings.filterwarnings("ignore")
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+logging.getLogger().setLevel(logging.ERROR)
+
+import os
 import json
 import torch
 import logging
@@ -9,32 +19,46 @@ from torch.optim import AdamW
 
 from src.config import Config
 from src.codes.data import get_dynamic_loader
-from src.pkgs.gs.vit_pytorch_face.vit_face import ViTClassifier
+from src.model.vit import get_vit_model
+from src.model.apply_lora import apply_lora
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+class Args:
+    def __init__(self):
+        self.task_type = "gs"                     # GS-LoRA mode
+        self.use_lora = True                      # Enable LoRA (even if from scratch)
+        self.ffn_adapt = False                     # Enable FFN adaptation (GS-LoRA)
+        
+        self.vpt_on = False                       # Not using VPT
+        self.vpt_num = 0                          # No VPT prompts
+
+        self.msa = [1, 0, 1]                      # Apply LoRA to first and last MSA layers
+        self.general_pos = [0, 1, 2, 3, 4, 5]     # Shared adapter positions
+        self.specfic_pos = [6, 7, 8, 9, 10, 11]   # Task-specific adapter positions
+
+        self.use_distillation = True              # Enable distillation (used in original paper)
+        self.use_block_weight = True              # Enable block weighting mechanism
+
+        self.ffn_num = 8                          # Adapter bottleneck size (rank)
+        self.ffn_adapter_init_option = "lora"     # Use zero-init (residual style)
+        self.ffn_adapter_scalar = "1.0"           # Scaling factor (fixed or learnable)
+        self.ffn_adapter_layernorm_option = "in"  # LayerNorm inside adapter
+
+        self.d_model = 768                        # ViT-Base hidden dimension
+        self.msa_adapt = True                     # Enable MSA adaptation (for CL-LoRA)
+        
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+vit = get_vit_model(name="vit_base_patch16_224", num_classes=100 )
 
 def get_model():
-    model = ViTClassifier(
-        num_classes=50,
-        image_size=Config.IMAGE_SIZE,
-        patch_size=16,
-        ac_patch_size=16,
-        pad=0,
-        dim=768,
-        depth=12,
-        heads=12,
-        mlp_dim=3072,
-        pool="cls",
-        channels=3,
-        dim_head=64,
-        dropout=0.1,
-        emb_dropout=0.1,
-        use_lora=False
-    )
-    return model
 
+    args = Args()
+    model = apply_lora(vit, args , use_pretrained=False)
+    return model
 
 def evaluate(model, loader, device):
     model.eval()
@@ -84,27 +108,17 @@ def train():
     logger.info(f"📁 Output directory: {outdir}")
     logger.info(f"🖥️ Device: {device}")
 
-    # Define the class range
-    class_range = range(0, 40)  # 0 to 39 inclusive
-
-    # Paths to the dataset
-    train_data_path = '/home/jag/codes/VIM_lora/data/train'  # Replace with your actual train dataset path
-    val_data_path = '/home/jag/codes/VIM_lora/data/val'      # Replace with your actual val dataset path
-
-    # Call the loader for training mode
     train_loader = get_dynamic_loader(
-        data_path=train_data_path,
-        class_range=class_range,
-        mode='train'
+    data_path=Config.FULL_TRAIN_DATA_PATH,  # e.g., 'cifer/train'
+    class_range=range(0, 100),
+    mode='train'
     )
 
-    # Call the loader for validation mode
     val_loader = get_dynamic_loader(
-        data_path=val_data_path,
-        class_range=class_range,
+        data_path=Config.FULL_VAL_DATA_PATH,  # e.g., 'cifer/validation'
+        class_range=range(0, 100),
         mode='val'
     )
-
 
     model = get_model().to(device)
 

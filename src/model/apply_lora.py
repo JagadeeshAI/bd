@@ -3,7 +3,14 @@ import torch
 from functools import partial
 from src.pkgs.cl.backbone.vit_cllora import VisionTransformer
 
-def apply_lora(vit_model, tuning_config):
+def count_parameters(model):
+    total = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    percent = 100 * trainable / total if total > 0 else 0
+    return total, trainable, percent
+
+
+def apply_lora(vit_model, tuning_config, use_pretrained=False):
     model = VisionTransformer(
         patch_size=16,
         embed_dim=768,
@@ -15,14 +22,22 @@ def apply_lora(vit_model, tuning_config):
         tuning_config=tuning_config,
     )
 
-    state_dict = vit_model.state_dict()
-    state_dict = {k: v for k, v in state_dict.items() if not k.startswith("head.")}
-    model.load_state_dict(state_dict, strict=False)
-
+    if use_pretrained:
+        print("Using any pretrained weights.")
+        state_dict = vit_model.state_dict()
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith("head.")}
+        model.load_state_dict(state_dict, strict=False)
+    else:
+        print("Not using any pretrained weights.")
+    
     if not getattr(tuning_config, "use_lora", True):
         print("🚫 LoRA disabled — using full fine-tuning.")
         for name, param in model.named_parameters():
             param.requires_grad = True
+        total, trainable, percent = count_parameters(model)
+        print(f"\nTotal Parameters      : {total:,}")
+        print(f"Trainable Parameters  : {trainable:,}")
+        print(f"Trainable % of Total  : {percent:.4f}%")
         return model
 
     for name, param in model.named_parameters():
@@ -49,5 +64,11 @@ def apply_lora(vit_model, tuning_config):
 
     else:
         print(f"⚠️ Unknown task_type '{tuning_config.task_type}' — no adapters activated.")
+
+    total, trainable, percent = count_parameters(model)
+    print(f"\nTotal Parameters      : {total:,}")
+    print(f"Trainable Parameters  : {trainable:,}")
+    print(f"Trainable % of Total  : {percent:.4f}%")
+
 
     return model

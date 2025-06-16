@@ -2,10 +2,10 @@ import os
 import torch
 
 class Config:
-    DATA_DIR = "/home/jag/codes/VIM_lora/data"
+    DATA_DIR = "/media/jag/volD/cifer100/cifer"
     FULL_TRAIN_DATA_PATH = os.path.join(DATA_DIR, "train")
     FULL_VAL_DATA_PATH = os.path.join(DATA_DIR, "val")
-
+    DATA_SET = "cifar100"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     NUM_WORKERS = 4
     PIN_MEMORY = True
@@ -14,25 +14,21 @@ class Config:
     MEAN = [0.485, 0.456, 0.406]
     STD = [0.229, 0.224, 0.225]
 
-   
     class FINETUNE:
         OUT_DIR = "./results/finetune"
         MODEL_PATH = os.path.join(OUT_DIR, "43.pth")
-
    
     class FORGET:
         OUT_DIR = "./results/forget"
-        EPOCHS = 30
-        LR = 2e-4
+        EPOCHS = 10
+        LR = 3e-4
         WEIGHT_DECAY = 1e-4
-        BND = 10
+        BND = 15
         BETA = 0.2
-        COMP_RESUME = True
-        DATA_RATIO = 0.01  # Currently unused
-
-        # ✅ Added: Required paths for forgetting/retention loaders
-        TRAIN_DATA_PATH = "/home/jag/codes/VIM_lora/data/train"
-        VAL_DATA_PATH = "/home/jag/codes/VIM_lora/data/val"
+        COMP_RESUME = False
+        DATA_RATIO = 0.1
+        TRAIN_DATA_PATH="/home/jag/codes/VIM_lora/data/train"
+        VAL_DATA_PATH="/home/jag/codes/VIM_lora/data/val"
 
         @staticmethod
         def best_model_path():
@@ -41,7 +37,6 @@ class Config:
         @staticmethod
         def resume_path():
             return os.path.join(Config.FORGET.OUT_DIR, "forget_resume.json")
-
 
     class TRAIN:
         OUT_DIR = "./results/train"
