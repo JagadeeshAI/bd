@@ -1,4 +1,372 @@
 {
   "epoch": 1,
-  "hmean": 29.13118051879301
+  "hmean": 29.13118051879301,
+  "Step1": [
+    {
+      "epoch": 1,
+      "acc_r": 42.85,
+      "acc_f": 0.0,
+      "acc_o": 34.28,
+      "hmean": 59.992999649982494,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {  
+      "epoch": 2,
+      "acc_r": 43.96666666666667,
+      "acc_f": 0.13333333333333333,
+      "acc_o": 35.2,
+      "hmean": 61.05405948242565,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 3,
+      "acc_r": 44.5,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 35.653333333333336,
+      "hmean": 61.541021492951245,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 4,
+      "acc_r": 46.35,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 37.13333333333333,
+      "hmean": 63.28771249286936,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 5,
+      "acc_r": 46.666666666666664,
+      "acc_f": 0.2,
+      "acc_o": 37.373333333333335,
+      "hmean": 63.595812471552115,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 6,
+      "acc_r": 48.016666666666666,
+      "acc_f": 0.06666666666666667,
+      "acc_o": 38.42666666666667,
+      "hmean": 64.86604333295783,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 7,
+      "acc_r": 48.35,
+      "acc_f": 0.06666666666666667,
+      "acc_o": 38.693333333333335,
+      "hmean": 65.16951781499382,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    },
+    {
+      "epoch": 8,
+      "acc_r": 48.03333333333333,
+      "acc_f": 0.4,
+      "acc_o": 38.50666666666667,
+      "hmean": 64.81083766087153,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 9,
+      "acc_r": 48.05,
+      "acc_f": 0.3333333333333333,
+      "acc_o": 38.50666666666667,
+      "hmean": 64.8401218549024,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 10,
+      "acc_r": 48.516666666666666,
+      "acc_f": 0.4666666666666667,
+      "acc_o": 38.906666666666666,
+      "hmean": 65.23506322938947,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step1_best.pth"
+    }
+  ],
+  "Step2": [
+    {
+      "epoch": 1,
+      "acc_r": 48.44444444444444,
+      "acc_f": 0.0,
+      "acc_o": 29.186666666666667,
+      "hmean": 65.26946107784431,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 2,
+      "acc_r": 49.022222222222226,
+      "acc_f": 0.4,
+      "acc_o": 29.72,
+      "hmean": 65.70502392344498,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 3,
+      "acc_r": 50.06666666666667,
+      "acc_f": 0.4,
+      "acc_o": 30.586666666666666,
+      "hmean": 66.63661469933186,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 4,
+      "acc_r": 51.08888888888889,
+      "acc_f": 0.5333333333333333,
+      "acc_o": 31.626666666666665,
+      "hmean": 67.50520049200492,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 5,
+      "acc_r": 51.17777777777778,
+      "acc_f": 0.5333333333333333,
+      "acc_o": 31.666666666666668,
+      "hmean": 67.58275065152186,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 6,
+      "acc_r": 50.68888888888889,
+      "acc_f": 0.6666666666666666,
+      "acc_o": 31.64,
+      "hmean": 67.12467288796721,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 7,
+      "acc_r": 49.93333333333333,
+      "acc_f": 0.5333333333333333,
+      "acc_o": 31.173333333333332,
+      "hmean": 66.48865089989587,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 8,
+      "acc_r": 50.977777777777774,
+      "acc_f": 0.8,
+      "acc_o": 31.893333333333334,
+      "hmean": 67.34678899082569,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 9,
+      "acc_r": 51.28888888888889,
+      "acc_f": 0.8666666666666667,
+      "acc_o": 32.12,
+      "hmean": 67.60222583345646,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step2_best.pth"
+    },
+    {
+      "epoch": 10,
+      "acc_r": 51.15555555555556,
+      "acc_f": 0.8666666666666667,
+      "acc_o": 32.08,
+      "hmean": 67.48630292276604,
+      "is_best": false,
+      "checkpoint": null
+    }
+  ],
+  "Step3": [
+    {
+      "epoch": 1,
+      "acc_r": 54.6,
+      "acc_f": 0.0,
+      "acc_o": 22.14666666666667,
+      "hmean": 70.63389391979302,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step3_best.pth"
+    },
+    {
+      "epoch": 2,
+      "acc_r": 55.36666666666667,
+      "acc_f": 0.06666666666666667,
+      "acc_o": 22.96,
+      "hmean": 71.2553194533877,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step3_best.pth"
+    },
+    {
+      "epoch": 3,
+      "acc_r": 58.13333333333333,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 24.64,
+      "hmean": 73.45225225225226,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step3_best.pth"
+    },
+    {
+      "epoch": 4,
+      "acc_r": 59.06666666666667,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.426666666666666,
+      "hmean": 74.19289112790372,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step3_best.pth"
+    },
+    {
+      "epoch": 5,
+      "acc_r": 58.233333333333334,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.213333333333335,
+      "hmean": 73.53202504044452,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 6,
+      "acc_r": 58.6,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.506666666666668,
+      "hmean": 73.82366315789473,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 7,
+      "acc_r": 58.43333333333333,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.68,
+      "hmean": 73.69126800140499,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 8,
+      "acc_r": 58.266666666666666,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.64,
+      "hmean": 73.55859353023911,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 9,
+      "acc_r": 58.46666666666667,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.893333333333334,
+      "hmean": 73.71776934962776,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 10,
+      "acc_r": 58.56666666666667,
+      "acc_f": 0.26666666666666666,
+      "acc_o": 25.946666666666665,
+      "hmean": 73.79720642942374,
+      "is_best": false,
+      "checkpoint": null
+    }
+  ],
+  "Step4": [
+    {
+      "epoch": 1,
+      "acc_r": 60.86666666666667,
+      "acc_f": 0.0,
+      "acc_o": 12.24,
+      "hmean": 75.67343555739743,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 2,
+      "acc_r": 61.86666666666667,
+      "acc_f": 0.0,
+      "acc_o": 12.533333333333333,
+      "hmean": 76.44151565074135,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 3,
+      "acc_r": 63.46666666666667,
+      "acc_f": 0.0,
+      "acc_o": 12.933333333333334,
+      "hmean": 77.65089722675368,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 4,
+      "acc_r": 66.0,
+      "acc_f": 0.0,
+      "acc_o": 13.586666666666666,
+      "hmean": 79.51807228915662,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 5,
+      "acc_r": 65.93333333333334,
+      "acc_f": 0.0,
+      "acc_o": 13.666666666666666,
+      "hmean": 79.46966653274407,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 6,
+      "acc_r": 66.46666666666667,
+      "acc_f": 0.0,
+      "acc_o": 13.866666666666667,
+      "hmean": 79.85582699239087,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 7,
+      "acc_r": 66.26666666666667,
+      "acc_f": 0.0,
+      "acc_o": 13.84,
+      "hmean": 79.71130713712911,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 8,
+      "acc_r": 66.26666666666667,
+      "acc_f": 0.0,
+      "acc_o": 13.866666666666667,
+      "hmean": 79.71130713712911,
+      "is_best": false,
+      "checkpoint": null
+    },
+    {
+      "epoch": 9,
+      "acc_r": 66.53333333333333,
+      "acc_f": 0.0,
+      "acc_o": 13.946666666666667,
+      "hmean": 79.90392313851082,
+      "is_best": true,
+      "checkpoint": "results/checkpoints/Step4_best.pth"
+    },
+    {
+      "epoch": 10,
+      "acc_r": 66.4,
+      "acc_f": 0.0,
+      "acc_o": 13.946666666666667,
+      "hmean": 79.8076923076923,
+      "is_best": false,
+      "checkpoint": null
+    }
+  ]
 }

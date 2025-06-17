@@ -118,10 +118,12 @@ def main():
 
     # Prepare validation data loader
     val_loader = get_dynamic_loader(
-        data_path=Config.FULL_VAL_DATA_PATH,
-        class_range=range(0, 100),
-        mode="val"
+    data_path=Config.FULL_VAL_DATA_PATH,
+    class_range=list(range(100)),  # ensure it's a list for compatibility
+    mode="val",
+    use_original_labels=True       # ✅ critical fix for correct labels
     )
+
 
     # Evaluate: get avg loss, overall accuracy, and class-wise accuracy
     avg_loss, overall_acc, class_acc = evaluate(model, val_loader, device, num_classes=100)
